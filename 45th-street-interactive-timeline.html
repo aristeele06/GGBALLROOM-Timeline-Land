@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Many Lives of 128 W. 45th St.</title>
+<style>
+  :root{
+    --bg:#15120f;
+    --panel:#1e1a16;
+    --panel-2:#241f1a;
+    --ink:#f3ecdf;
+    --ink-dim:#b8ab97;
+    --rule:#3a332c;
+    --gold:#e3a73b;
+    --red:#e14b3d;
+    --c-w45:#c1584a;
+    --c-8th:#3f8e86;
+    --c-unk:#8a8072;
+    --c-block:#b98a3e;
+    --focus:#e3a73b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--gold);}
+  a:hover{color:var(--red);}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:36px 22px 60px;}
+
+  /* ---------- Marquee header ---------- */
+  .marquee{
+    border:2px solid var(--rule);
+    border-radius:6px;
+    padding:26px 24px 22px;
+    position:relative;
+    background:
+      radial-gradient(circle at 8px 8px, var(--gold) 0 3px, transparent 3.5px) top left / 34px 34px repeat-x,
+      radial-gradient(circle at 8px 8px, var(--gold) 0 3px, transparent 3.5px) bottom left / 34px 34px repeat-x,
+      var(--panel);
+    background-attachment:local;
+  }
+  .marquee h1{
+    margin:6px 0 4px;
+    font-family:Georgia,"Times New Roman",serif;
+    font-weight:700;
+    font-size:clamp(1.6rem,4vw,2.5rem);
+    letter-spacing:0.01em;
+    text-align:center;
+    color:var(--ink);
+  }
+  .marquee .sub{
+    text-align:center;
+    color:var(--ink-dim);
+    max-width:640px;
+    margin:0 auto;
+    font-size:0.96rem;
+  }
+  .marquee .kicker{
+    text-align:center;
+    color:var(--red);
+    font-size:0.78rem;
+    letter-spacing:0.14em;
+    font-weight:600;
+    margin-bottom:2px;
+  }
+
+  /* ---------- Legend / filter chips ---------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+    margin:22px 0 8px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:7px 13px;
+    border-radius:999px;
+    border:1.5px solid var(--rule);
+    background:var(--panel);
+    color:var(--ink-dim);
+    font-size:0.82rem;
+    cursor:pointer;
+    user-select:none;
+    transition:border-color .15s, color .15s, opacity .15s;
+  }
+  .chip:hover{border-color:var(--ink-dim);}
+  .chip .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .chip.off{opacity:0.35;}
+  .chip.active{color:var(--ink);}
+
+  .hint{
+    text-align:center;
+    color:var(--ink-dim);
+    font-size:0.78rem;
+    margin-bottom:18px;
+  }
+
+  /* ---------- Timeline ---------- */
+  .timeline-card{
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .timeline-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
+  .timeline-inner{
+    position:relative;
+  }
+  .ruler{
+    position:relative;
+    height:34px;
+    border-bottom:1px solid var(--rule);
+    background:var(--panel-2);
+  }
+  .tick{
+    position:absolute;
+    top:0;
+    bottom:0;
+    border-left:1px solid var(--rule);
+  }
+  .tick.major{border-left:1px solid #4a4136;}
+  .tick .yr{
+    position:absolute;
+    top:8px;
+    left:6px;
+    font-size:0.72rem;
+    color:var(--ink-dim);
+    white-space:nowrap;
+  }
+  .gridlines{
+    position:absolute;
+    top:34px;
+    bottom:0;
+    left:0;
+    right:0;
+    pointer-events:none;
+  }
+  .gridlines .line{
+    position:absolute;
+    top:0;
+    bottom:0;
+    border-left:1px solid rgba(255,255,255,0.045);
+  }
+  .gridlines .line.major{border-left:1px solid rgba(255,255,255,0.09);}
+
+  .lane{
+    position:relative;
+    height:64px;
+    border-bottom:1px solid var(--rule);
+  }
+  .lane:last-child{border-bottom:none;}
+  .lane-label{
+    position:sticky;
+    left:0;
+    top:0;
+    z-index:6;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    height:100%;
+    padding:0 12px;
+    background:linear-gradient(90deg, var(--panel-2) 0%, var(--panel-2) 88%, rgba(30,26,22,0) 100%);
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink);
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  .lane-label .sw{width:9px;height:9px;border-radius:50%;flex:none;}
+
+  .event{
+    position:absolute;
+    top:16px;
+    height:32px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    padding:0 12px;
+    font-size:0.76rem;
+    font-weight:600;
+    color:#1a1512;
+    cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    box-shadow:0 1px 2px rgba(0,0,0,0.35);
+    transition:transform .12s, box-shadow .12s;
+    border:2px solid transparent;
+  }
+  .event:hover{transform:translateY(-1px);}
+  .event.selected{
+    border-color:var(--ink);
+    box-shadow:0 0 0 3px rgba(243,236,223,0.18);
+  }
+  .event.flagged{
+    background-image:repeating-linear-gradient(135deg, rgba(0,0,0,0.16) 0 6px, transparent 6px 12px);
+  }
+  .event.point{
+    width:18px;
+    height:18px;
+    top:23px;
+    border-radius:50%;
+    padding:0;
+  }
+  .flag-badge{
+    position:absolute;
+    top:-7px;
+    right:-6px;
+    font-size:0.68rem;
+    line-height:1;
+  }
+  .point-label{
+    position:absolute;
+    top:23px;
+    font-size:0.72rem;
+    color:var(--ink-dim);
+    white-space:nowrap;
+    pointer-events:none;
+  }
+
+  /* ---------- Detail panel ---------- */
+  .detail{
+    margin-top:22px;
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:22px 24px;
+    min-height:120px;
+  }
+  .detail.empty{
+    color:var(--ink-dim);
+    font-size:0.9rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:100px;
+  }
+  .detail-head{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+  }
+  .detail-head h2{
+    margin:0;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:1.35rem;
+    font-weight:700;
+  }
+  .detail-date{
+    color:var(--gold);
+    font-size:0.85rem;
+    font-weight:600;
+  }
+  .detail-addr{
+    color:var(--ink-dim);
+    font-size:0.82rem;
+    margin-bottom:14px;
+  }
+  .detail-text{
+    font-size:0.94rem;
+    color:var(--ink);
+    max-width:70ch;
+    margin-bottom:14px;
+  }
+  .detail-note{
+    border-left:3px solid var(--red);
+    background:rgba(225,75,61,0.08);
+    padding:9px 12px;
+    font-size:0.83rem;
+    color:var(--ink-dim);
+    margin-bottom:14px;
+    border-radius:0 4px 4px 0;
+  }
+  .codes{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .code-chip{
+    font-size:0.72rem;
+    padding:3px 8px;
+    border-radius:5px;
+    background:var(--panel-2);
+    border:1px solid var(--rule);
+    color:var(--ink-dim);
+  }
+  .sources{
+    font-size:0.82rem;
+    color:var(--ink-dim);
+  }
+  .sources a{margin-right:14px;}
+
+  footer{
+    margin-top:26px;
+    text-align:center;
+    color:var(--ink-dim);
+    font-size:0.76rem;
+  }
+
+  @media (max-width:640px){
+    .wrap{padding:22px 12px 40px;}
+    .lane-label{font-size:0.7rem; padding:0 8px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="marquee">
+    <div class="kicker">TIMES SQUARE &middot; NIGHTLIFE HISTORY</div>
+    <h1>The Many Lives of 128 W. 45th St.</h1>
+    <p class="sub">Built from Bob Damron's Address Book (via Mapping the Gay Guides) and secondary
+    sources. Nearly every venue here reused the same address, or the same block, across three decades.</p>
+  </div>
+
+  <div class="legend" id="legend"></div>
+  <p class="hint">Click a bar or dot for details &middot; click a legend chip to show/hide a location &middot; scroll sideways to move through time</p>
+
+  <div class="timeline-card">
+    <div class="timeline-scroll" id="scrollHost">
+      <div class="timeline-inner" id="inner">
+        <div class="ruler" id="ruler"></div>
+        <div class="gridlines" id="gridlines"></div>
+        <div id="lanes"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail empty" id="detail">Select an entry above to read its full history.</div>
+
+  <footer>Sources cited per entry. Two entries are flagged (⚑) as open research questions — see their notes.</footer>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const GROUPS = [
+  {id:'w45',   label:'128 W. 45th St.',        color:'var(--c-w45)'},
+  {id:'8th',   label:'719 8th Ave.',            color:'var(--c-8th)'},
+  {id:'unk',   label:'Address unknown',         color:'var(--c-unk)'},
+  {id:'block', label:'45th St. (same block)',   color:'var(--c-block)'}
+];
+
+// month is 1-12 or null (unknown -> treated as mid-year for positioning)
+const EVENTS = [
+  {
+    id:'pep1', group:'w45', type:'range',
+    label:'Peppermint Lounge (1st)',
+    start:{y:1960,m:null}, end:{y:1965,m:12},
+    dateText:'1960 &ndash; Dec. 1965',
+    address:'128 W. 45th St.',
+    text:`Gay hustler bar adjoining the Knickerbocker Hotel; small dancefloor, mahogany
+      bar, occupancy limit ~178. Music by Joey Dee and the Starliters &mdash; the venue became
+      nationally famous for popularizing the Twist. Lost its liquor permit and went dark
+      per the <em>New York Times</em>.`,
+    codes:[],
+    sources:[
+      {label:'New York Times, Dec. 28, 1965', url:'https://www.nytimes.com/1965/12/28/archives/peppermint-lounge-goes-dark-may-lose-liquor-permit-today.html'},
+      {label:"Last Night a DJ Saved My Life, p.56"}
+    ],
+    flagged:false
+  },
+  {
+    id:'gap', group:'w45', type:'range',
+    label:'[Gap in the record]',
+    start:{y:1965,m:12}, end:{y:1975,m:null},
+    dateText:'1965 &ndash; 1975 (gap)',
+    address:'128 W. 45th St.',
+    text:`No source yet identifies what occupied this address between the first
+      Peppermint Lounge's 1965 closure and the Turntable's appearance in the 1975 Damron
+      Guide. Worth checking 1966&ndash;1974 Damron editions if available.`,
+    codes:[],
+    sources:[],
+    flagged:true,
+    note:'Open research question: what filled this decade-long gap?'
+  },
+  {
+    id:'turntable', group:'w45', type:'point',
+    label:'Turntable',
+    start:{y:1975,m:null},
+    dateText:'1975',
+    address:'128 W. 45th St. (per Peppermint Twist) / 114 W. 45th St. (per Damron)',
+    text:`Listed as a disco. Per the book <em>Peppermint Twist</em>, the original
+      Peppermint Lounge was renamed the Turntable when it became a gay bar &mdash; but the
+      Damron Guide lists Turntable's address as 114 W. 45th St., not 128.`,
+    codes:[],
+    sources:[
+      {label:'Instagram post (Turntable/Hollywood)', url:'https://www.instagram.com/p/DSucNboluir/'},
+      {label:'disco-disco.com'}
+    ],
+    flagged:true,
+    note:'Address discrepancy still needs resolving: 114 vs. 128 W. 45th St.'
+  },
+  {
+    id:'hollywood', group:'w45', type:'range',
+    label:'Hollywood',
+    start:{y:1975,m:null}, end:{y:1977,m:null},
+    dateText:'1975 &ndash; 1977',
+    address:'128 W. 45th St.',
+    text:`Club/hotel. DJ Richie Kaczor worked here before becoming the star DJ at Studio
+      54, where he later popularized "I Will Survive." Damron description: "Some Latins,"
+      Disco, $5 minimum on weekends.`,
+    codes:['*','D','RT','WE (76&ndash;77 only)','HIP'],
+    sources:[{label:'Damron Guide, 1975&ndash;1977'}],
+    flagged:false
+  },
+  {
+    id:'grandhotel', group:'w45', type:'point',
+    label:'Grand Hotel',
+    start:{y:1978,m:null},
+    dateText:'1978',
+    address:'128 W. 45th St.',
+    text:`Listed in the Damron Guide at this address prior to GGs in 1978.`,
+    codes:['D','YC'],
+    sources:[{label:'Damron Guide, 1978'}],
+    flagged:true,
+    note:'Possible conflict with the Hollywood entry (same address, overlapping year) — may be a hotel component of the same building, or a Damron inconsistency.'
+  },
+  {
+    id:'ggbarnums', group:'w45', type:'point',
+    label:'GG Knickerbockers P.T. Barnum Room ("GG Barnums")',
+    start:{y:1978,m:11},
+    dateText:'Nov. 1978',
+    address:'128 W. 45th St. (former Knickerbocker Hotel lobby)',
+    text:`Matty Ianniello remodeled the ground floor &mdash; the former Knickerbocker Hotel
+      lobby, then being converted to condos &mdash; into a ~400-capacity club, nearly 3x the
+      size of the original Peppermint Lounge. "GG" was borrowed from Ianniello's Greenwich
+      Village club, the Gilded Grape.`,
+    codes:[],
+    sources:[{label:"Peppermint Twist: The Mob, the Music, and the Most Famous Dance Club of the '60s, p.251"}],
+    flagged:false
+  },
+  {
+    id:'gildedgrape', group:'8th', type:'range',
+    label:'Gilded Grape ("G.G.")',
+    start:{y:1975,m:null}, end:{y:1981,m:null},
+    dateText:'1975 &ndash; 1981',
+    address:'719 8th Ave.',
+    text:`1975 description: "Drags, hustlers, transsexuals, go go boys." By 1981 the same
+      description adds "(Also Barnum Room (Disco))," linking it to the 45th St. venue &mdash;
+      this is the source of the "GG" name used at Knickerbockers/Barnum Room.`,
+    codes:['*','D','R','RT','YC'],
+    sources:[{label:'Damron Guide, 1975 &amp; 1981'}],
+    flagged:false
+  },
+  {
+    id:'wagonwheel', group:'unk', type:'point',
+    label:'Wagon Wheel',
+    start:{y:1975,m:null},
+    dateText:'1975 (last of 3 Damron entries)',
+    address:'Not yet located',
+    text:`Gay hustler bar described as a place where "predatory young hawks preyed on
+      wealthy pigeons." Three separate Damron Guide entries exist; this is the final one,
+      dated 1975.`,
+    codes:['M','R','W'],
+    sources:[{label:'Damron Guide (3 editions through 1975)'}],
+    flagged:true,
+    note:'Address not yet identified — context suggests the same block as the other venues.'
+  },
+  {
+    id:'pep2', group:'w45', type:'range',
+    label:'Peppermint Lounge (2nd)',
+    start:{y:1980,m:11}, end:{y:1982,m:5},
+    dateText:'Nov. 1980 &ndash; May 1982',
+    address:'128 W. 45th St.',
+    text:`Reopened as a rock club, same owner (Matthew "the Horse" Ianniello). Booked
+      mainstream rock acts, including Iggy Pop. Closed May 1982 and relocated to 100 Fifth
+      Ave. as the "New Peppermint Lounge," which itself had closed by October 1985.`,
+    codes:['R'],
+    sources:[{label:'disco-disco.com'},{label:'Damron Guide, 1984'},{label:'New York Times, Oct. 1985'}],
+    flagged:false
+  },
+  {
+    id:'bond', group:'block', type:'point',
+    label:'Bond International Casino',
+    start:{y:1981,m:null},
+    dateText:'1981',
+    address:'Same block, 45th St.',
+    text:`Large club hosting major acts of the 1980s. The building had existed since the
+      1930s before becoming a nightclub in 1981. Damron's description at the time:
+      "Supposedly opening soon," Disco, Roller skate, Cabaret.`,
+    codes:[],
+    sources:[{label:'Wikipedia — Bond International Casino', url:'https://en.wikipedia.org/wiki/Bond_International_Casino'}],
+    flagged:false
+  }
+];
+
+/* ---------------- Layout constants ---------------- */
+const DOMAIN_START = 1958;
+const DOMAIN_END   = 1987;
+const PX_PER_YEAR  = 62;
+const LABEL_W      = 168; // reserved so sticky labels never overlap earliest bars visually
+const TIMELINE_W   = (DOMAIN_END - DOMAIN_START) * PX_PER_YEAR;
+
+function decYear(pt){
+  if(!pt) return null;
+  const m = pt.m == null ? 6 : pt.m; // default mid-year when month unknown
+  return pt.y + (m-1)/12;
+}
+function xFor(decimalYear){
+  return (decimalYear - DOMAIN_START) * PX_PER_YEAR;
+}
+
+/* ---------------- Build legend ---------------- */
+const legendEl = document.getElementById('legend');
+const hidden = new Set();
+
+GROUPS.forEach(g=>{
+  const chip = document.createElement('div');
+  chip.className = 'chip active';
+  chip.dataset.group = g.id;
+  chip.innerHTML = `<span class="dot" style="background:${g.color}"></span>${g.label}`;
+  chip.addEventListener('click', ()=>{
+    if(hidden.has(g.id)){ hidden.delete(g.id); chip.classList.add('active'); chip.classList.remove('off'); }
+    else { hidden.add(g.id); chip.classList.remove('active'); chip.classList.add('off'); }
+    renderLanes();
+  });
+  legendEl.appendChild(chip);
+});
+
+/* ---------------- Build ruler + gridlines ---------------- */
+const ruler = document.getElementById('ruler');
+const gridlines = document.getElementById('gridlines');
+const inner = document.getElementById('inner');
+inner.style.width = (TIMELINE_W + LABEL_W) + 'px';
+
+for(let y = DOMAIN_START; y <= DOMAIN_END; y++){
+  const isMajor = (y % 5 === 0);
+  const x = LABEL_W + xFor(y);
+
+  const tick = document.createElement('div');
+  tick.className = 'tick' + (isMajor ? ' major' : '');
+  tick.style.left = x + 'px';
+  if(isMajor){
+    const lbl = document.createElement('span');
+    lbl.className = 'yr';
+    lbl.textContent = y;
+    tick.appendChild(lbl);
+  }
+  ruler.appendChild(tick);
+
+  const line = document.createElement('div');
+  line.className = 'line' + (isMajor ? ' major' : '');
+  line.style.left = x + 'px';
+  gridlines.appendChild(line);
+}
+
+/* ---------------- Build lanes + events ---------------- */
+const lanesHost = document.getElementById('lanes');
+let selectedId = null;
+
+function renderLanes(){
+  lanesHost.innerHTML = '';
+  GROUPS.forEach(g=>{
+    if(hidden.has(g.id)) return;
+
+    const groupEvents = EVENTS.filter(e=>e.group===g.id).map(e=>{
+      const startDec = decYear(e.start);
+      let endDec;
+      if(e.type === 'point'){
+        // reserve enough time-width for the point's label text so two
+        // close-together points don't get placed on the same sub-row
+        // with overlapping labels
+        const shown = e.label.length > 26 ? e.label.slice(0,24)+'…' : e.label;
+        const approxLabelPx = 13 + shown.length * 6.6;
+        endDec = startDec + (approxLabelPx / PX_PER_YEAR);
+      } else {
+        endDec = decYear(e.end);
+      }
+      return {...e, startDec, endDec};
+    }).sort((a,b)=>a.startDec - b.startDec);
+
+    // interval partitioning: assign each event the first sub-row whose
+    // previous occupant ends at or before this one's start
+    const subrowEnds = [];
+    groupEvents.forEach(e=>{
+      let row = subrowEnds.findIndex(end => end <= e.startDec);
+      if(row === -1){ row = subrowEnds.length; subrowEnds.push(0); }
+      subrowEnds[row] = e.endDec;
+      e.subrow = row;
+    });
+    const numRows = Math.max(subrowEnds.length, 1);
+    const ROW_H = 44;
+    const laneHeight = numRows * ROW_H + 16;
+
+    const lane = document.createElement('div');
+    lane.className = 'lane';
+    lane.style.height = laneHeight + 'px';
+
+    const label = document.createElement('div');
+    label.className = 'lane-label';
+    label.innerHTML = `<span class="sw" style="background:${g.color}"></span>${g.label}`;
+    lane.appendChild(label);
+
+    groupEvents.forEach(e=>{
+      const rowTop = 8 + e.subrow * ROW_H;
+      const el = document.createElement('div');
+      el.tabIndex = 0;
+      el.dataset.id = e.id;
+
+      if(e.type === 'point'){
+        el.className = 'event point' + (e.flagged?' flagged':'') + (e.id===selectedId?' selected':'');
+        el.style.left = (LABEL_W + xFor(e.startDec) - 9) + 'px';
+        el.style.top = (rowTop + 7) + 'px';
+        el.style.background = g.color;
+        lane.appendChild(el);
+
+        const lbl = document.createElement('div');
+        lbl.className = 'point-label';
+        lbl.style.left = (LABEL_W + xFor(e.startDec) + 13) + 'px';
+        lbl.style.top = (rowTop + 7) + 'px';
+        lbl.textContent = e.label.length > 26 ? e.label.slice(0,24)+'…' : e.label;
+        lane.appendChild(lbl);
+      } else {
+        const left = LABEL_W + xFor(e.startDec);
+        const width = Math.max(xFor(e.endDec) - xFor(e.startDec), 26);
+        el.className = 'event' + (e.flagged?' flagged':'') + (e.id===selectedId?' selected':'');
+        el.style.left = left + 'px';
+        el.style.top = rowTop + 'px';
+        el.style.width = width + 'px';
+        el.style.background = g.color;
+        el.textContent = e.label;
+        lane.appendChild(el);
+      }
+
+      if(e.flagged){
+        const badge = document.createElement('span');
+        badge.className='flag-badge';
+        badge.textContent='⚑';
+        el.appendChild(badge);
+      }
+
+      el.addEventListener('click', ()=>selectEvent(e.id));
+      el.addEventListener('keypress', (ev)=>{ if(ev.key==='Enter') selectEvent(e.id); });
+    });
+
+    lanesHost.appendChild(lane);
+  });
+}
+
+/* ---------------- Detail panel ---------------- */
+const detailEl = document.getElementById('detail');
+
+function selectEvent(id){
+  selectedId = id;
+  renderLanes();
+  const e = EVENTS.find(ev=>ev.id===id);
+  if(!e) return;
+  detailEl.classList.remove('empty');
+
+  const codesHtml = e.codes.length
+    ? `<div class="codes">${e.codes.map(c=>`<span class="code-chip">${c}</span>`).join('')}</div>`
+    : '';
+
+  const sourcesHtml = e.sources.length
+    ? `<div class="sources">${e.sources.map(s=> s.url
+        ? `<a href="${s.url}" target="_blank" rel="noopener">${s.label}</a>`
+        : `<span>${s.label}</span>`
+      ).join('')}</div>`
+    : '';
+
+  const noteHtml = e.note ? `<div class="detail-note">⚑ ${e.note}</div>` : '';
+
+  detailEl.innerHTML = `
+    <div class="detail-head">
+      <h2>${e.label}</h2>
+      <span class="detail-date">${e.dateText}</span>
+    </div>
+    <div class="detail-addr">${e.address}</div>
+    ${noteHtml}
+    <div class="detail-text">${e.text}</div>
+    ${codesHtml}
+    ${sourcesHtml}
+  `;
+}
+
+renderLanes();
+
+// stretch gridlines to the full rendered height of the lanes
+const gridlinesEl = document.getElementById('gridlines');
+gridlinesEl.style.height = lanesHost.getBoundingClientRect().height + 'px';
+</script>
+</body>
+</html>
+
